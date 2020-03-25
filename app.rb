@@ -22,7 +22,7 @@ TIME_ZONE = "Asia/Tokyo"
 
 get '/' do
   # Fetch the meetup groups
-  groups = ['Machine-Learning-Tokyo',
+  @groups = ['Machine-Learning-Tokyo',
             'Le-Wagon-Tokyo-Coding-Station',
             'tokyo-rails',
             'Women-Who-Code-Tokyo',
