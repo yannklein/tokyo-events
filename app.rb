@@ -165,3 +165,21 @@ def post_to_gcalendar(events, service, existing_ids)
     print "Event modified:#{result.updated}"
   end
 end
+
+# Code for rake
+def fetch_event
+  @groups = ['Machine-Learning-Tokyo',
+            'Le-Wagon-Tokyo-Coding-Station',
+            'tokyo-rails',
+            'Women-Who-Code-Tokyo',
+            'StartupTokyo',
+            'Tokyo-Startup-Engineering',
+            'devjapan',
+            'tokyofintech']
+  @events = fetch_two_month_of_meetups(@groups)
+
+  # Send them to Gcal
+  service = initialize_gcal
+  @existing_ids = fetch_existing_gcal_events_ids(service)
+  post_to_gcalendar(@events, service, @existing_ids)
+end

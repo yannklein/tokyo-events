@@ -1,7 +1,6 @@
 require 'rspec/core/rake_task'
-RSpec::Core::RakeTask.new(:spec)
 
-require_relative 'config/application'
+RSpec::Core::RakeTask.new(:spec)
 
 desc 'Look for style guide offenses in your code'
 task :rubocop do
@@ -16,4 +15,10 @@ task :console do
   require 'pry'
 
   Pry.start
+end
+
+desc 'Fetch all the meetup events and send them to Gcal'
+task :fetch_event do
+  require_relative "app"
+  fetch_event
 end
