@@ -20,8 +20,40 @@ require "fileutils"
 CALENDAR_ID = "lewagon.org_b6cap1032jp9tcdcq74v4ute58@group.calendar.google.com"
 TIME_ZONE = "Asia/Tokyo"
 MEETUP_API_KEY = "9ip2qi4v6lr0j4nah575rh5kon"
+MEETUP_URI = "https://tokyo-events.herokuapp.com/auth"
+MEETUP_SECRET = "th3179nbuo35rd0ct5upk4kb8k"
 
 get '/test' do
+end
+
+get '/run' do
+  erb :run
+end
+
+get '/auth' do
+  access_token = params['access_token']
+  uri = URI("https://secure.meetup.com/oauth2/access?client_id=#{MEETUP_API_KEY}&client_secret=#{MEETUP_SECRET}&grant_type=authorization_code&redirect_uri=#{MEETUP_URI}&code=#{access_token}")
+  https = Net::HTTP.new(uri.host, uri.port)
+  https.use_ssl = true
+
+  response = https.post(uri.path, headers)
+  credentials = JSON.parse(response)
+  bearer = "Bearer #{credentials['access_token']}"
+
+  uri = URI("https://api.meetup.com/members/self/")
+  https = Net::HTTP.new(uri.host, uri.port)
+  https.use_ssl = true
+  headers =
+    {
+      'Authorization' => bearer
+    }
+
+  data_serialized = https.get(uri.path, headers)
+  @events = JSON.parse(data_serialized)
+
+  @existing_ids = []
+
+  erb :test
 end
 
 get '/' do
