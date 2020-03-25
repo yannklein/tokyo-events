@@ -31,16 +31,16 @@ get '/run' do
 end
 
 get '/auth' do
-  access_token = params['access_token']
-  uri = URI("https://secure.meetup.com/oauth2/access?client_id=#{MEETUP_API_KEY}&client_secret=#{MEETUP_SECRET}&grant_type=authorization_code&redirect_uri=#{MEETUP_URI}&code=#{access_token}")
+  p access_token = params['access_token']
+  p uri = URI("https://secure.meetup.com/oauth2/access?client_id=#{MEETUP_API_KEY}&client_secret=#{MEETUP_SECRET}&grant_type=authorization_code&redirect_uri=#{MEETUP_URI}&code=#{access_token}")
   https = Net::HTTP.new(uri.host, uri.port)
   https.use_ssl = true
 
   response = https.post(uri.path, headers)
-  credentials = JSON.parse(response)
+  p credentials = JSON.parse(response)
   bearer = "Bearer #{credentials['access_token']}"
 
-  uri = URI("https://api.meetup.com/members/self/")
+  p uri = URI("https://api.meetup.com/members/self/")
   https = Net::HTTP.new(uri.host, uri.port)
   https.use_ssl = true
   headers =
@@ -48,9 +48,10 @@ get '/auth' do
       'Authorization' => bearer
     }
 
-  data_serialized = https.get(uri.path, headers)
-  @events = JSON.parse(data_serialized)
+  p data_serialized = https.get(uri.path, headers)
+  @test = JSON.parse(data_serialized)
 
+  @events = []
   @existing_ids = []
 
   erb :test
