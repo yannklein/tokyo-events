@@ -78,7 +78,7 @@ get '/' do
   #     format: 'json',
   #     page: '50'}
   # meetup_api = MeetupApi.new
-  @events = meetup_api.open_events(params)
+  # @events = meetup_api.open_events(params)
   @events = fetch_a_week_of_meetups(groups)
 
   # Send them to Gcal
@@ -90,11 +90,11 @@ get '/' do
   erb :test
 end
 
-def initialise_meetup_api
-  MeetupClient.configure do |config|
-    config.api_key = MEETUP_API_KEY
-  end
-end
+# def initialise_meetup_api
+#   MeetupClient.configure do |config|
+#     config.api_key = MEETUP_API_KEY
+#   end
+# end
 
 def fetch_a_week_of_meetups(groups)
   events = []
