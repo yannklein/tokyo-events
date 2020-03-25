@@ -23,42 +23,6 @@ MEETUP_API_KEY = "9ip2qi4v6lr0j4nah575rh5kon"
 MEETUP_URI = "https://tokyo-events.herokuapp.com/auth"
 MEETUP_SECRET = "jjuj793kha3tenbqbqk1mbmstb"
 
-# get '/test' do
-# end
-
-# get '/run' do
-#   erb :run
-# end
-
-# get '/auth2' do
-#   erb :auth
-# end
-
-# get '/populate' do
-#   p params
-#   p current_access_token = params["acces_token"]
-#   p uri = URI("https://secure.meetup.com/oauth2/access?client_id=#{MEETUP_API_KEY}&client_secret=#{MEETUP_SECRET}&grant_type=authorization_code&redirect_uri=#{MEETUP_URI}&code=#{current_access_token}")
-#   p response = Net::HTTP.post_form(uri, {})
-
-#   p credentials = JSON.parse(response)
-#   bearer = "Bearer #{credentials['access_token']}"
-
-#   p uri = URI("https://api.meetup.com/members/self/")
-#   https = Net::HTTP.new(uri.host, uri.port)
-#   https.use_ssl = true
-#   headers =
-#     {
-#       'Authorization' => bearer
-#     }
-
-#   p data_serialized = https.get(uri.path, headers)
-#   @test = JSON.parse(data_serialized)
-
-#   @events = []
-#   @existing_ids = []
-#   erb :test
-# end
-
 get '/' do
   # Fetch the meetup groups
   groups = ['Machine-Learning-Tokyo',
@@ -69,42 +33,25 @@ get '/' do
             'Tokyo-Startup-Engineering',
             'devjapan',
             'tokyofintech']
-  # initialise_meetup_api
-
-  # params = { category: '1',
-  #     city: 'London',
-  #     country: 'GB',
-  #     status: 'upcoming',
-  #     format: 'json',
-  #     page: '50'}
-  # meetup_api = MeetupApi.new
-  # @events = meetup_api.open_events(params)
   @events = fetch_a_week_of_meetups(groups)
 
   # Send them to Gcal
   service = initialize_gcal
   @existing_ids = fetch_existing_gcal_events_ids(service)
   post_to_gcalendar(@events, service)
-  # @existing_ids = []
 
   erb :test
 end
 
-# def initialise_meetup_api
-#   MeetupClient.configure do |config|
-#     config.api_key = MEETUP_API_KEY
-#   end
-# end
-
 def fetch_a_week_of_meetups(groups)
-  events = []
+  meetup_events = []
   a_week_from_today = (Date.today + 7).strftime('%F')
   groups.each do |group|
     url = "https://api.meetup.com/#{group}/events?&sign=true&photo-host=public&page=20&no_later_than=#{a_week_from_today}&page=20"
     events_serialized = URI.open(url).read
     events = JSON.parse(events_serialized)
     events.each do |event|
-      events << { id: event['id'],
+      meetup_events << { id: event['id'],
                   group: event['group']['name'],
                   name: event['name'],
                   venue: event['venue']['name'],
@@ -112,11 +59,10 @@ def fetch_a_week_of_meetups(groups)
                   url: event['link'] }
     end
   end
-  events
+  meetup_events
 end
 
 # Gcal API post
-
 OOB_URI = "urn:ietf:wg:oauth:2.0:oob".freeze
 APPLICATION_NAME = "Tokyo Tech Events".freeze
 CREDENTIALS_PATH = "credentials.json".freeze
@@ -171,17 +117,18 @@ end
 
 def post_to_gcalendar(events, service)
   events.each do |event|
+    p event
     gcal_event = Google::Apis::CalendarV3::Event.new(
-      id: event['id'],
-      summary: event['name'],
-      location: event['location'],
-      html_link: event['url'],
+      id: event[:id],
+      summary: event[:name],
+      location: event[:location],
+      html_link: event[:url],
       start: Google::Apis::CalendarV3::EventDateTime.new(
-        date_time: event['date'].strftime('%FT%T%:z'), # should be like'2020-03-25T17:04:00-07:00'
+        date_time: event[:date].strftime('%FT%T%:z'), # should be like2020-03-25T17:04:00-07:00
         time_zone: TIME_ZONE
       ),
       end: Google::Apis::CalendarV3::EventDateTime.new(
-        date_time: event['date'].strftime('%FT%T%:z'),
+        date_time: event[:date].strftime('%FT%T%:z'),
         time_zone: TIME_ZONE
       )
     )
