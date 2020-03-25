@@ -30,7 +30,7 @@ get '/run' do
   erb :run
 end
 
-get '/auth' do
+get '/auth2' do
   erb :auth
 end
 
@@ -38,13 +38,8 @@ get '/populate' do
   p params
   p current_access_token = params["acces_token"]
   p uri = URI("https://secure.meetup.com/oauth2/access?client_id=#{MEETUP_API_KEY}&client_secret=#{MEETUP_SECRET}&grant_type=authorization_code&redirect_uri=#{MEETUP_URI}&code=#{current_access_token}")
-  https = Net::HTTP.new(uri.host, uri.port)
-  headers = {
-      'Content-Type' => 'application/json'
-  }
-  https.use_ssl = true
+  p response = Net::HTTP.post_form(uri, {})
 
-  response = https.post(uri.path, headers)
   p credentials = JSON.parse(response)
   bearer = "Bearer #{credentials['access_token']}"
 
@@ -64,7 +59,7 @@ get '/populate' do
   erb :test
 end
 
-get '/' do
+get '/auth' do
   # Fetch the meetup groups
   groups = ['Machine-Learning-Tokyo',
             'Le-Wagon-Tokyo-Coding-Station',
