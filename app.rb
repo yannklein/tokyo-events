@@ -39,6 +39,9 @@ get '/populate' do
   p current_access_token = params["acces_token"]
   p uri = URI("https://secure.meetup.com/oauth2/access?client_id=#{MEETUP_API_KEY}&client_secret=#{MEETUP_SECRET}&grant_type=authorization_code&redirect_uri=#{MEETUP_URI}&code=#{current_access_token}")
   https = Net::HTTP.new(uri.host, uri.port)
+  headers = {
+      'Content-Type' => 'application/json'
+  }
   https.use_ssl = true
 
   response = https.post(uri.path, headers)
