@@ -47,13 +47,16 @@ def fetch_two_month_of_meetups(groups)
     url = "https://api.meetup.com/#{group}/events?&sign=true&photo-host=public&page=20&no_later_than=#{a_week_from_today}&page=20"
     events_serialized = URI.open(url).read
     events = JSON.parse(events_serialized)
+    puts "Raw events data"
+    p events
     events.each do |event|
       meetup_events << { id: event['id'],
                   group: event['group']['name'],
-                  name: event['name'],
+                  name: "@#{event['local_time']} | #{event['name']}",
                   venue: event['venue'].nil? ? "" : event['venue']['name'],
                   date: event['local_date'],
-                  url: event['link'] || "" }
+                  url: event['link'] || "",
+                  description: "<p><a href='#{event['link']}'>Open the event page</a></p>#{event['description']}" || "" }
     end
   end
   meetup_events
@@ -121,6 +124,7 @@ def post_to_gcalendar(events, service, existing_ids)
       id: event[:id],
       summary: event[:name],
       location: event[:location],
+      description: event[:description],
       html_link: event[:url],
       start: Google::Apis::CalendarV3::EventDateTime.new(
         date: event[:date], # should be like2020-03-25T17:04:00-07:00
@@ -145,6 +149,7 @@ def post_to_gcalendar(events, service, existing_ids)
       id: event[:id],
       summary: event[:name],
       location: event[:location],
+      description: event[:description],
       html_link: event[:url],
       start: Google::Apis::CalendarV3::EventDateTime.new(
         date: event[:date], # should be like2020-03-25T17:04:00-07:00
