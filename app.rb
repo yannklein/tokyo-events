@@ -30,7 +30,7 @@ get '/' do
             'Tokyo-Startup-Engineering',
             'devjapan',
             'tokyofintech']
-  @events = fetch_two_month_of_meetups(groups)
+  @events = fetch_two_month_of_meetups(@groups)
 
   # Send them to Gcal
   service = initialize_gcal
