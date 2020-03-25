@@ -31,8 +31,10 @@ get '/run' do
 end
 
 get '/auth' do
-  p params
-  p param
+  erb :auth
+end
+
+get '/populate' do
   p access_token = params['access_token']
   p uri = URI("https://secure.meetup.com/oauth2/access?client_id=#{MEETUP_API_KEY}&client_secret=#{MEETUP_SECRET}&grant_type=authorization_code&redirect_uri=#{MEETUP_URI}&code=#{access_token}")
   https = Net::HTTP.new(uri.host, uri.port)
@@ -55,7 +57,6 @@ get '/auth' do
 
   @events = []
   @existing_ids = []
-
   erb :test
 end
 

@@ -1,0 +1,8 @@
+<button>Click me to run the event popluating</button>
+<script type="text/javascript">
+  document.querySelector('button').addEventListener("click", (event) => {
+    event.preventDefault();
+    window.location =`../populate?acces_token=${document.location.hash}`
+
+  });
+</script>
