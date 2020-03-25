@@ -21,45 +21,45 @@ CALENDAR_ID = "lewagon.org_b6cap1032jp9tcdcq74v4ute58@group.calendar.google.com"
 TIME_ZONE = "Asia/Tokyo"
 MEETUP_API_KEY = "9ip2qi4v6lr0j4nah575rh5kon"
 MEETUP_URI = "https://tokyo-events.herokuapp.com/auth"
-MEETUP_SECRET = "th3179nbuo35rd0ct5upk4kb8k"
+MEETUP_SECRET = "jjuj793kha3tenbqbqk1mbmstb"
 
-get '/test' do
-end
+# get '/test' do
+# end
 
-get '/run' do
-  erb :run
-end
+# get '/run' do
+#   erb :run
+# end
 
-get '/auth2' do
-  erb :auth
-end
+# get '/auth2' do
+#   erb :auth
+# end
 
-get '/populate' do
-  p params
-  p current_access_token = params["acces_token"]
-  p uri = URI("https://secure.meetup.com/oauth2/access?client_id=#{MEETUP_API_KEY}&client_secret=#{MEETUP_SECRET}&grant_type=authorization_code&redirect_uri=#{MEETUP_URI}&code=#{current_access_token}")
-  p response = Net::HTTP.post_form(uri, {})
+# get '/populate' do
+#   p params
+#   p current_access_token = params["acces_token"]
+#   p uri = URI("https://secure.meetup.com/oauth2/access?client_id=#{MEETUP_API_KEY}&client_secret=#{MEETUP_SECRET}&grant_type=authorization_code&redirect_uri=#{MEETUP_URI}&code=#{current_access_token}")
+#   p response = Net::HTTP.post_form(uri, {})
 
-  p credentials = JSON.parse(response)
-  bearer = "Bearer #{credentials['access_token']}"
+#   p credentials = JSON.parse(response)
+#   bearer = "Bearer #{credentials['access_token']}"
 
-  p uri = URI("https://api.meetup.com/members/self/")
-  https = Net::HTTP.new(uri.host, uri.port)
-  https.use_ssl = true
-  headers =
-    {
-      'Authorization' => bearer
-    }
+#   p uri = URI("https://api.meetup.com/members/self/")
+#   https = Net::HTTP.new(uri.host, uri.port)
+#   https.use_ssl = true
+#   headers =
+#     {
+#       'Authorization' => bearer
+#     }
 
-  p data_serialized = https.get(uri.path, headers)
-  @test = JSON.parse(data_serialized)
+#   p data_serialized = https.get(uri.path, headers)
+#   @test = JSON.parse(data_serialized)
 
-  @events = []
-  @existing_ids = []
-  erb :test
-end
+#   @events = []
+#   @existing_ids = []
+#   erb :test
+# end
 
-get '/auth' do
+get '/' do
   # Fetch the meetup groups
   groups = ['Machine-Learning-Tokyo',
             'Le-Wagon-Tokyo-Coding-Station',
@@ -69,23 +69,23 @@ get '/auth' do
             'Tokyo-Startup-Engineering',
             'devjapan',
             'tokyofintech']
-  initialise_meetup_api
+  # initialise_meetup_api
 
-  params = { category: '1',
-      city: 'London',
-      country: 'GB',
-      status: 'upcoming',
-      format: 'json',
-      page: '50'}
-  meetup_api = MeetupApi.new
+  # params = { category: '1',
+  #     city: 'London',
+  #     country: 'GB',
+  #     status: 'upcoming',
+  #     format: 'json',
+  #     page: '50'}
+  # meetup_api = MeetupApi.new
   @events = meetup_api.open_events(params)
-  # @events = fetch_a_week_of_meetups(groups)
+  @events = fetch_a_week_of_meetups(groups)
 
   # Send them to Gcal
-  # service = initialize_gcal
-  # @existing_ids = fetch_existing_gcal_events_ids(service)
-  # post_to_gcalendar(@events, service)
-  @existing_ids = []
+  service = initialize_gcal
+  @existing_ids = fetch_existing_gcal_events_ids(service)
+  post_to_gcalendar(@events, service)
+  # @existing_ids = []
 
   erb :test
 end
