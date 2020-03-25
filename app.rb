@@ -7,6 +7,9 @@ require "net/http"
 require 'date'
 require 'pry'
 
+#Meetup gems
+require "meetup_client"
+
 # Gcal gems
 require "google/apis/calendar_v3"
 require "googleauth"
@@ -15,6 +18,8 @@ require "fileutils"
 
 
 CALENDAR_ID = "lewagon.org_b6cap1032jp9tcdcq74v4ute58@group.calendar.google.com"
+TIME_ZONE = "Asia/Tokyo"
+MEETUP_API_KEY = "9ip2qi4v6lr0j4nah575rh5kon"
 
 get '/test' do
 end
@@ -29,34 +34,54 @@ get '/' do
             'Tokyo-Startup-Engineering',
             'devjapan',
             'tokyofintech']
-  @events = fetch_a_week_of_meetups(groups)
+  initialise_meetup_api
+
+  params = { category: '1',
+      city: 'London',
+      country: 'GB',
+      status: 'upcoming',
+      format: 'json',
+      page: '50'}
+  meetup_api = MeetupApi.new
+  @events = meetup_api.open_events(params)
+  # @events = fetch_a_week_of_meetups(groups)
 
   # Send them to Gcal
-  service = initialize_gcal
-  post_to_gcalendar(@events, service)
+  # service = initialize_gcal
+  # @existing_ids = fetch_existing_gcal_events_ids(service)
+  # post_to_gcalendar(@events, service)
+  @existing_ids = []
 
   erb :test
 end
 
+def initialise_meetup_api
+  MeetupClient.configure do |config|
+    config.api_key = MEETUP_API_KEY
+  end
+end
+
 def fetch_a_week_of_meetups(groups)
-  results = []
+  events = []
   a_week_from_today = (Date.today + 7).strftime('%F')
   groups.each do |group|
     url = "https://api.meetup.com/#{group}/events?&sign=true&photo-host=public&page=20&no_later_than=#{a_week_from_today}&page=20"
     events_serialized = URI.open(url).read
     events = JSON.parse(events_serialized)
     events.each do |event|
-      results << { group: event['group']['name'],
-                   name: event['name'],
-                   venue: event['venue']['name'],
-                   date: event['local_date'],
-                   url: event['link'] }
+      events << { id: event['id'],
+                  group: event['group']['name'],
+                  name: event['name'],
+                  venue: event['venue']['name'],
+                  date: Date.parse(event['local_date']),
+                  url: event['link'] }
     end
   end
-  results
+  events
 end
 
 # Gcal API post
+
 OOB_URI = "urn:ietf:wg:oauth:2.0:oob".freeze
 APPLICATION_NAME = "Tokyo Tech Events".freeze
 CREDENTIALS_PATH = "credentials.json".freeze
@@ -98,37 +123,35 @@ def initialize_gcal
   service
 end
 
-def fetch_existing_gcal_events_ids
-  # # Fetch the next 10 events for the user
-  # calendar_id = "primary"
-  # response = service.list_events(CALENDAR_ID,
-  #                                max_results:   10,
-  #                                single_events: true,
-  #                                order_by:      "startTime",
-  #                                time_min:      DateTime.now.rfc3339)
-  # puts "Upcoming events:"
-  # puts "No upcoming events found" if response.items.empty?
-  # response.items.each do |event|
-  #   start = event.start.date || event.start.date_time
-  #   puts "- #{event.summary} (#{start})"
-  # end
+def fetch_existing_gcal_events_ids(service)
+  ids = []
+  response = service.list_events(CALENDAR_ID)
+  puts "Upcoming events:"
+  puts "No upcoming events found" if response.items.empty?
+  response.items.each do |event|
+    ids << event
+  end
+  ids
 end
 
 def post_to_gcalendar(events, service)
-  event = Google::Apis::CalendarV3::Event.new(
-    summary: 'Google I/O 2015',
-    location: '800 Howard St., San Francisco, CA 94103',
-    description: 'A chance to hear more about Google\'s developer products.',
-    start: Google::Apis::CalendarV3::EventDateTime.new(
-      date_time: '2020-03-25T09:00:00-07:00',
-      time_zone: 'America/Los_Angeles'
-    ),
-    end: Google::Apis::CalendarV3::EventDateTime.new(
-      date_time: '2020-03-25T17:04:00-07:00',
-      time_zone: 'America/Los_Angeles'
+  events.each do |event|
+    gcal_event = Google::Apis::CalendarV3::Event.new(
+      id: event['id'],
+      summary: event['name'],
+      location: event['location'],
+      html_link: event['url'],
+      start: Google::Apis::CalendarV3::EventDateTime.new(
+        date_time: event['date'].strftime('%FT%T%:z'), # should be like'2020-03-25T17:04:00-07:00'
+        time_zone: TIME_ZONE
+      ),
+      end: Google::Apis::CalendarV3::EventDateTime.new(
+        date_time: event['date'].strftime('%FT%T%:z'),
+        time_zone: TIME_ZONE
+      )
     )
-  )
 
-  result = service.insert_event(CALENDAR_ID, event)
-  puts "Event created: #{result.html_link}"
+    result = service.insert_event(CALENDAR_ID, gcal_event)
+    puts "Event created: #{result.html_link}"
+  end
 end

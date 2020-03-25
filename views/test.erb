@@ -1,1 +1,6 @@
-<p><%= @events %></p>
+<% @events.each do |event| %>
+  <p><%= event %></p>
+<% end %>
+<% @existing_ids.each do |existing_id| %>
+  <p><%= existing_id %></p>
+<% end %>
