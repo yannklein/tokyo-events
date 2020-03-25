@@ -17,11 +17,8 @@ require "googleauth/stores/file_token_store"
 require "fileutils"
 
 
-CALENDAR_ID = "lewagon.org_b6cap1032jp9tcdcq74v4ute58@group.calendar.google.com"
+CALENDAR_ID = "lewagon.org_i5sv5pnr5htimao32tkb9a4jko@group.calendar.google.com"
 TIME_ZONE = "Asia/Tokyo"
-MEETUP_API_KEY = "9ip2qi4v6lr0j4nah575rh5kon"
-MEETUP_URI = "https://tokyo-events.herokuapp.com/auth"
-MEETUP_SECRET = "jjuj793kha3tenbqbqk1mbmstb"
 
 get '/' do
   # Fetch the meetup groups
@@ -33,19 +30,19 @@ get '/' do
             'Tokyo-Startup-Engineering',
             'devjapan',
             'tokyofintech']
-  @events = fetch_a_week_of_meetups(groups)
+  @events = fetch_two_month_of_meetups(groups)
 
   # Send them to Gcal
   service = initialize_gcal
   @existing_ids = fetch_existing_gcal_events_ids(service)
-  post_to_gcalendar(@events, service)
+  post_to_gcalendar(@events, service, @existing_ids)
 
   erb :test
 end
 
-def fetch_a_week_of_meetups(groups)
+def fetch_two_month_of_meetups(groups)
   meetup_events = []
-  a_week_from_today = (Date.today + 7).strftime('%F')
+  a_week_from_today = (Date.today + 60).strftime('%F')
   groups.each do |group|
     url = "https://api.meetup.com/#{group}/events?&sign=true&photo-host=public&page=20&no_later_than=#{a_week_from_today}&page=20"
     events_serialized = URI.open(url).read
@@ -54,9 +51,9 @@ def fetch_a_week_of_meetups(groups)
       meetup_events << { id: event['id'],
                   group: event['group']['name'],
                   name: event['name'],
-                  venue: event['venue']['name'],
-                  date: Date.parse(event['local_date']),
-                  url: event['link'] }
+                  venue: event['venue'].nil? ? "" : event['venue']['name'],
+                  date: event['local_date'],
+                  url: event['link'] || "" }
     end
   end
   meetup_events
@@ -110,13 +107,15 @@ def fetch_existing_gcal_events_ids(service)
   puts "Upcoming events:"
   puts "No upcoming events found" if response.items.empty?
   response.items.each do |event|
-    ids << event
+    ids << event.id
   end
   ids
 end
 
-def post_to_gcalendar(events, service)
-  events.each do |event|
+def post_to_gcalendar(events, service, existing_ids)
+  # Create new events
+  events.reject { |event| existing_ids.include?(event[:id]) }.each do |event|
+    puts "Event to be created:"
     p event
     gcal_event = Google::Apis::CalendarV3::Event.new(
       id: event[:id],
@@ -124,16 +123,40 @@ def post_to_gcalendar(events, service)
       location: event[:location],
       html_link: event[:url],
       start: Google::Apis::CalendarV3::EventDateTime.new(
-        date_time: event[:date].strftime('%FT%T%:z'), # should be like2020-03-25T17:04:00-07:00
+        date: event[:date], # should be like2020-03-25T17:04:00-07:00
         time_zone: TIME_ZONE
       ),
       end: Google::Apis::CalendarV3::EventDateTime.new(
-        date_time: event[:date].strftime('%FT%T%:z'),
+        date: event[:date],
         time_zone: TIME_ZONE
       )
     )
 
     result = service.insert_event(CALENDAR_ID, gcal_event)
     puts "Event created: #{result.html_link}"
+  end
+
+  # Update existing ones
+  events.select { |event| existing_ids.include?(event[:id]) }.each do |event|
+    old_gcal_event = service.get_event(CALENDAR_ID, event[:id])
+    puts "Event to be modified:"
+    p event
+    gcal_event = Google::Apis::CalendarV3::Event.new(
+      id: event[:id],
+      summary: event[:name],
+      location: event[:location],
+      html_link: event[:url],
+      start: Google::Apis::CalendarV3::EventDateTime.new(
+        date: event[:date], # should be like2020-03-25T17:04:00-07:00
+        time_zone: TIME_ZONE
+      ),
+      end: Google::Apis::CalendarV3::EventDateTime.new(
+        date: event[:date],
+        time_zone: TIME_ZONE
+      )
+    )
+
+    result = service.update_event(CALENDAR_ID, old_gcal_event.id, gcal_event)
+    print "Event modified:#{result.updated}"
   end
 end
