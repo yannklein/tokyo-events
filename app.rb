@@ -35,7 +35,8 @@ get '/auth' do
 end
 
 get '/populate' do
-  p access_token = params['access_token']
+  p params
+  p access_token = params[:access_token]
   p uri = URI("https://secure.meetup.com/oauth2/access?client_id=#{MEETUP_API_KEY}&client_secret=#{MEETUP_SECRET}&grant_type=authorization_code&redirect_uri=#{MEETUP_URI}&code=#{access_token}")
   https = Net::HTTP.new(uri.host, uri.port)
   https.use_ssl = true
