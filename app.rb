@@ -3,7 +3,7 @@ require "sinatra/json"
 require 'sinatra/reloader'
 require 'json'
 require 'open-uri'
-require "net/http"
+require 'rest-client'
 require 'date'
 require 'pry'
 
@@ -22,22 +22,47 @@ TIME_ZONE = "Asia/Tokyo"
 
 get '/' do
   # Fetch the meetup groups
-  @groups = ['Machine-Learning-Tokyo',
-            'Le-Wagon-Tokyo-Coding-Station',
-            'tokyo-rails',
-            'Women-Who-Code-Tokyo',
-            'StartupTokyo',
-            'Tokyo-Startup-Engineering',
-            'devjapan',
-            'tokyofintech']
-  @events = fetch_two_month_of_meetups(@groups)
+  @mu_groups = ['Machine-Learning-Tokyo',
+                'Le-Wagon-Tokyo-Coding-Station',
+                'tokyo-rails',
+                'Women-Who-Code-Tokyo',
+                'StartupTokyo',
+                'Tokyo-Startup-Engineering',
+                'devjapan',
+                'tokyofintech']
+  @events = fetch_two_month_of_meetups(@mu_groups)
+
+  @dk_groups = ['trbmeetup', 'uxtalktokyo', 'rubyassociation']
+  @events.concat(fetch_doorkeeper_events(@dk_groups))
 
   # Send them to Gcal
+  p @events
+  p @existing_ids
   service = initialize_gcal
   @existing_ids = fetch_existing_gcal_events_ids(service)
   post_to_gcalendar(@events, service, @existing_ids)
 
   erb :test
+end
+
+def fetch_doorkeeper_events(groups)
+  dk_events = []
+  dk_token = 'UsV1JF8zkkTT5p2VSZz8'
+  groups.each do |group|
+    url = "https://api.doorkeeper.jp/groups/#{group}/events"
+    events_serialized = RestClient.get(url, { 'Autorization': "Bearer #{dk_token}" })
+    events = JSON.parse(events_serialized)
+    events.each do |event|
+      dk_events << { id: event['event']['id'].to_s,
+                  group: event['event']['group'],
+                  name: "@#{DateTime.parse(event['event']['starts_at']).new_offset('+09:00').strftime('%k:%M')} | #{event['event']['title']}",
+                  venue: event['event']['venue_name'],
+                  date: Date.parse(event['event']['starts_at']).strftime('%F'),
+                  url: event['event']['public_url'],
+                  description: "<p><a href='#{event['event']['public_url']}'>Open the event page</a></p>#{event['event']['description']}" || "" }
+    end
+  end
+  dk_events
 end
 
 def fetch_two_month_of_meetups(groups)
