@@ -1,13 +1,19 @@
 <h1>Groups targeted</h1>
-<% @mu_groups.concat(@dk_groups).each do |group| %>
-  <p><%= group %></p>
-<% end %>
+<ul>
+  <% @mu_groups.concat(@dk_groups).each do |group| %>
+    <li><%= group %></li>
+  <% end %>
+</ul>
 
 <h1>Events</h1>
-<% @events.each do |event| %>
-  <p><%= event %></p>
-<% end %>
+<ul>
+  <% @events.each do |event| %>
+    <li><a href='<%= event[:ur] %>'><%= event[:date] %> <%= event[:name] %></a></li>
+  <% end %>
+</ul>
 <h1>Existing events Ids</h1>
-<% @existing_ids.each do |existing_id| %>
-  <p><%= existing_id %></p>
-<% end %>
+<ul>
+  <% @existing_ids.each do |existing_id| %>
+    <li><%= existing_id %></li>
+  <% end %>
+</ul>
