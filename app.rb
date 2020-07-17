@@ -20,6 +20,23 @@ require "fileutils"
 CALENDAR_ID = "lewagon.org_i5sv5pnr5htimao32tkb9a4jko@group.calendar.google.com"
 TIME_ZONE = "Asia/Tokyo"
 
+get '/api' do
+  # Fetch the meetup groups
+  @mu_groups = ['Machine-Learning-Tokyo',
+                'Le-Wagon-Tokyo-Coding-Station',
+                'tokyo-rails',
+                'Women-Who-Code-Tokyo',
+                'StartupTokyo',
+                'Tokyo-Startup-Engineering',
+                'devjapan',
+                'tokyofintech']
+  @events = fetch_two_month_of_meetups(@mu_groups)
+
+  @dk_groups = ['trbmeetup', 'uxtalktokyo', 'rubyassociation']
+  @events.concat(fetch_doorkeeper_events(@dk_groups))
+  json @events
+end
+
 get '/' do
   # Fetch the meetup groups
   @mu_groups = ['Machine-Learning-Tokyo',
