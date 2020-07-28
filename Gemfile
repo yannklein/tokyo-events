@@ -9,3 +9,4 @@ gem 'rspec'
 gem 'google-api-client', '~> 0.34'
 gem 'meetup_client'
 gem 'rest-client'
+gem "sinatra-cross_origin", "~> 0.3.1"

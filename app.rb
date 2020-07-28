@@ -15,6 +15,11 @@ require "google/apis/calendar_v3"
 require "googleauth"
 require "googleauth/stores/file_token_store"
 require "fileutils"
+require 'sinatra/cross_origin'
+
+configure do
+  enable :cross_origin
+end
 
 
 CALENDAR_ID = "lewagon.org_i5sv5pnr5htimao32tkb9a4jko@group.calendar.google.com"
